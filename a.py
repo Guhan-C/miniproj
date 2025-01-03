@@ -1,42 +1,33 @@
-from pymongo import MongoClient
+import pandas as pd
+import language_tool_python
 
-# Connect to MongoDB
-client = MongoClient("mongodb://localhost:27017/")  # Replace with your MongoDB URI
-db = client['NLP']
-collection = db['food']
+# Load the TSV file
+file_path = r"D:\INTEGRATED MSC DATA SCIENCE\8th SEMESTER\MiniProject\Dataset\archive\cola_public\raw\in_domain_train.tsv"
+  # Replace with the path to your TSV file
+data = pd.read_csv(file_path, sep='\t', header=None, names=["Source","Label","Wrong","Sentence"])
 
-# Define dietary restriction words
-dietary_words = {
-    "dairy": ["milk", "butter", "cream", "cheese", "yogurt"],
-    "meat": ["beef", "pork", "chicken", "wurst", "lamb", "mutton", "bacon"],
-    "seafood": ["fish", "shrimp", "crab", "lobster", "oyster"],
-    "gluten": ["wheat", "barley", "rye", "bread", "crackers", "pasta"],
-    "nuts": ["peanut", "almond", "cashew", "walnut", "pistachio", "hazelnut"],
-    "alcohol": ["wine", "beer", "vodka", "rum", "whiskey", "champagne"]
-}
+ungrammatical_sentences = data[data["Label"] == 0]
 
-# Function to find dietary restrictions for a given NER array
-def find_dietary_restrictions(ner_array, dietary_words):
-    matched_categories = set()
-    for word in ner_array:
-        for category, restriction_words in dietary_words.items():
-            if any(restrict_word in word.lower() for restrict_word in restriction_words):
-                matched_categories.add(category)
-    return list(matched_categories)
+# Initialize LanguageTool
+tool = language_tool_python.LanguageTool('en-US')
 
-# Process each document in MongoDB and update it
-cursor = collection.find({}, {"NER": 1})  # Fetch only the NER field
-i=0
-for doc in cursor:
-    print(i)
-    i+=1
-    ner_array = doc.get("NER", [])
-    restrictions = find_dietary_restrictions(ner_array, dietary_words)
+# Analyze grammatical errors
+errors_data = []
+for sentence in ungrammatical_sentences["Sentence"]:
+    matches = tool.check(sentence)
+    errors = [{"ruleId": match.ruleId, "message": match.message, "suggestions": match.replacements} for match in matches]
+    errors_data.append({"Sentence": sentence, "Errors": errors})
 
-    # Update MongoDB with new dietary_restrictions field
-    collection.update_one(
-        {"_id": doc["_id"]},  # Match document by ID
-        {"$set": {"dietary_restrictions": restrictions}}  # Add new field
-    )
+# Convert errors to DataFrame
+errors_df = pd.DataFrame(errors_data)
 
-print("Dietary restrictions added successfully to each document!")
+# Save to a CSV file for analysis
+errors_df.to_csv("grammar_errors_label_0.csv", index=False)
+
+print("Analysis complete. Saved to 'grammar_errors_label_0.csv'")
+
+
+# Filter sentences with label 0
+
+
+

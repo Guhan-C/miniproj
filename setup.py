@@ -17,11 +17,11 @@ def get_requirements(file_path: str) -> List[str]:
     return requirements
 
 setup(
-    name='miniproject-recipe-recommendation',
+    name='How small LLM makes mistakes',
     version='0.0.1',
     author='Guhan',
     author_email='cguhan03@gmail.com',
-    description='A recipe recommendation system using NLP and ML',
+    description='To understand how small LLm makes mistakes using mechanistic interpretability',
     url='https://github.com/Guhan-C/miniproj.git',
     packages=find_packages(),
     install_requires=get_requirements('requirements.txt'),
